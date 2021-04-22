@@ -67,6 +67,10 @@
         };
       },
       methods: {
+        select(event) {
+          r = document.createRange(); r.selectNode(event.target.closest("p"));
+          s = window.getSelection(); s.removeAllRanges(); s.addRange(r);
+        }
       },
       computed: {
       }
