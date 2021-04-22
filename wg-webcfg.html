@@ -13,13 +13,43 @@
   <section class="section">
     <div id="app" class="container">
       <div class="columns">
-        <div class="column is-half">
+        <div class="column">
           <h2 class="title">Wireguard Config Generator</h2>
+          <p class="subtitle">Server config</p>
+          <article class="panel">
+            <p class="panel-heading">{{ server }}:{{ port }}</p>
+            <p class="panel-block" v-on:click="select">
+              <code>
+                [Interface]
+                Address = {{ clientprefix }}.1/24             
+                ListenPort = {{ port }}
+                PrivateKey = ...
+                
+                [Peer]
+                PublicKey = ...
+                AllowedIPs = {{ clientprefix }}.2/32                
+                </code>
+            </p>
+          </article>
         </div>
         <div class="column">
+          <p class="subtitle">Client configs</p>
+          <article class="panel">
+            <p class="panel-heading">Client 1</p>
+            <p class="panel-block" v-on:click="select">
+              <code>
+                [Interface]
+                Address = {{ clientprefix }}.2/24
+                PrivateKey = ...
+
+                [Peer]
+                PublicKey = ...
+                AllowedIPs = 0.0.0.0/0, ::/0
+                Endpoint = {{ server }}:{{ port }}               
+              </code>
+            </p>
+          </article>
         </div>
-      </div>
-      <div class="columns">
       </div>
     </div>
   </section>
@@ -32,6 +62,7 @@
         return {
           server: "somedomain.com",
           port: 5180,
+          clientprefix: "172.17.172.",
           clients: []
         };
       },
