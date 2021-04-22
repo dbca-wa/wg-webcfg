@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.0/css/bulma.min.css">
+  <title>Wireguard Config Generator</title>
+</head>
+
+<body>
+  <section class="section">
+    <div id="app" class="container">
+      <div class="columns">
+        <div class="column is-half">
+          <h2 class="title">Wireguard Config Generator</h2>
+        </div>
+        <div class="column">
+        </div>
+      </div>
+      <div class="columns">
+      </div>
+    </div>
+    </div>
+  </section>
+  <script src="https://unpkg.com/vue/dist/vue.min.js"></script>
+  <script src="https://git.zx2c4.com/wireguard-tools/plain/contrib/keygen-html/wireguard.js"></script>
+  <script>
+    new Vue({
+      el: "#app",
+      data() {
+        return {
+          server: "somedomain.com",
+          port: 5180,
+          clients: []
+        };
+      },
+      methods: {
+      },
+      computed: {
+      }
+    });
+  </script>
+</body>
+
+</html>
