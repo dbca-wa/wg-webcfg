@@ -4,7 +4,6 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta http-equiv="X-UA-Compatible" content="ie=edge" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.0/css/bulma.min.css">
   <title>Wireguard Config Generator</title>
 </head>
@@ -17,40 +16,41 @@
           <h2 class="title">Wireguard Config Generator</h2>
           This page intends to generate a config that can be saved to a server, which allows for all client config to be regenerated/updated from the servers config as required. The config is a very basic tunnel, where each client can only access the servers IP, and no routing/masquerading is allowed (ideal for single server remote access).
           <div class="buttons">
-            <button class="button is-primary" v-on:click="updateclients">Generate</button>
-            <button class="button is-warning">Import Server Config</button>
+            <button class="button is-primary" @click="updateclients">Generate</button>
+            <button class="button is-warning" @click="modalactive = 'is-active'">Import Server Config</button>
           </div>
           <article class="panel">
             <table class="table">
               <tr>
-                <td>Server: <input type="text" v-model="server"></td>
-                <td>Port: <input type="number" v-model="port"></td>
+                <td>Server: <input v-model="server"></td>
+                <td>Port: <input v-model="port"></td>
               </tr>
               <tr>
-                <td>Network: <input type="text" v-model="network"><br>1stClientIP: <input type="number" v-model="startip" size="2"></td>
-                <td>Clients: <input type="number" v-model="clientcount" size="3"></td>
+                <td>Net: <input v-model="network" size="4"> 1stIP: <input v-model="startip" size="1"></td>
+                <td>Clients: <input v-model="clientcount" size="3"></td>
               </tr>
               <tr>
-                <td>ServerPrivateKey: <input type="text" v-model="serverkeys.privateKey"></td>
-                <td>ServerPublicKey: <input type="text" v-model="serverkeys.publicKey"></td>
+                <td>ServerPrivateKey: <input v-model="serverkeys.privateKey" size="10"></td>
+                <td>ServerPublicKey: <input v-model="serverkeys.publicKey" size="10"></td>
               </tr>
             </table>
           </article>
           <article class="panel">
             <p class="panel-heading">Server config {{ server }}:{{ port }}</p>
             <p class="panel-block" >
-              <code style="font-size:small;"><span v-on:click="select"># Server: {{ server }}, Port: {{ port }}<br>
-                [Interface]<br>
+              <code style="font-size:small;"><span @click="select">[Interface]<br>
                 Address = {{ network }}.1/24<br>
                 ListenPort = {{ port }}<br>
                 PrivateKey = {{ serverkeys.privateKey }}<br>
                 # PublicKey = {{ serverkeys.publicKey }}<br>
+                # Server = {{ server }}<br>
+                # Port = {{ port }}<br>
                   <span v-for="(value, client) in clients"><br>
                   ## {{ value.name }}<br>
                   [Peer]<br>
-                  # PrivateKey = {{ value.privateKey }}<br>
-                  PublicKey = {{ value.publicKey }}<br>
                   AllowedIPs = {{ network }}.{{ client }}/32<br>
+                  PublicKey = {{ value.publicKey }}<br>
+                  # PrivateKey = {{ value.privateKey }}<br>
                   </span>
                 </span>
               </code>
@@ -61,10 +61,10 @@
           <article class="panel">
             <p class="panel-heading">Client configs (first ip: {{network}}.{{startip}}, count: {{ clientcount }})</p>
             <div class="panel-block" v-for="(value, client) in clients">
-              <canvas v-bind:id="'canvas'+client"></canvas>
+              <canvas :id="'canvas'+client"></canvas>
               <div>
                 <input v-model="value.name">
-                <code class="panel-block" style="font-size:small;" v-bind:id="'code'+client"><span v-on:click="select">## {{ value.name }}<br>
+                <code class="panel-block" style="font-size:small;" :id="'code'+client"><span @click="select">## {{ value.name }}<br>
                 [Interface]<br>
                 Address = {{ network }}.{{ client }}/24<br>
                 PrivateKey = {{ value.privateKey }}<br>
@@ -76,6 +76,22 @@
               </div>
               </div>
           </article>
+        </div>
+      </div>
+      <div class="modal" :class="modalactive">
+        <div class="modal-background"></div>
+        <div class="modal-card">
+          <header class="modal-card-head">
+            <p class="modal-card-title">Import server config</p>
+            <button class="delete" aria-label="close" @click="modalactive = null"></button>
+          </header>
+          <section class="modal-card-body">
+            <textarea id="textimport" class="textarea" placeholder="Paste server config here"></textarea>
+          </section>
+          <footer class="modal-card-foot">
+            <button class="button is-success" @click="importconfig">Import</button>
+            <button class="button" @click="modalactive = null">Cancel</button>
+          </footer>
         </div>
       </div>
     </div>
@@ -94,6 +110,7 @@
           startip: 2,
           clientcount: 3,
           clients: {},
+          modalactive: null,
           serverkeys: wireguard.generateKeypair()
         };
       },
@@ -101,6 +118,11 @@
         select(event) {
           r = document.createRange(); r.selectNode(event.target.closest("span"));
           s = window.getSelection(); s.removeAllRanges(); s.addRange(r);
+        },
+        importconfig(event) {
+          var config = document.getElementById("textimport").value.split("\n");
+
+          console.log(config);
         },
         updateclients(event) {
           this.clients = this.makeclients;
