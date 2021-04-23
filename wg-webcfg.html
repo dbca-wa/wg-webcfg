@@ -16,50 +16,65 @@
         <div class="column">
           <h2 class="title">Wireguard Config Generator</h2>
           <article class="panel">
+            <button class="button" v-on:click="updateclients">Go</button>
             <table class="table">
               <tr>
                 <td>Server: <input type="text" v-model="server"></td>
                 <td>Port: <input type="number" v-model="port"></td>
               </tr>
               <tr>
-                <td>Network: <input type="text" v-model="network"></td>
-                <td>Clients: <input type="number" v-model="clientcount"></td>
+                <td>Network: <input type="text" v-model="network"><br>1stClientIP: <input type="number" v-model="startip" size="2"></td>
+                <td>Clients: <input type="number" v-model="clientcount" size="3"></td>
+              </tr>
+              <tr>
+                <td>ServerPrivateKey: <input type="text" v-model="serverkeys.privateKey"></td>
+                <td>ServerPublicKey: <input type="text" v-model="serverkeys.publicKey"></td>
               </tr>
             </table>
           </article>
           <article class="panel">
             <p class="panel-heading">Server config {{ server }}:{{ port }}</p>
-            <p class="panel-block" v-on:click="select">
+            <p class="panel-block" >
               <code>
+                <span v-on:click="select">
                 [Interface]<br>
                 Address = {{ network }}.1/24<br>
+                # Server: {{ server }}, Port: {{ port }}<br>
                 ListenPort = {{ port }}<br>
                 PrivateKey = {{ serverkeys.privateKey }}<br>
+                # PublicKey = {{ serverkeys.publicKey }}<br>
                 <span v-for="(value, client) in clients"><br>
-                # Client {{ client - 1 }}<br>
+                # {{ value.name }}<br>
                 [Peer]<br>
                 PublicKey = {{ value.publicKey }}<br>
                 AllowedIPs = {{ network }}.{{ client }}/32<br>
-                </span>           
+                </span>
+                </span>
                 </code>
             </p>
           </article>
         </div>
         <div class="column">
           <article class="panel">
-            <p class="panel-heading">Client configs ({{ clientcount }} clients)</p>
-            <p class="panel-block" v-on:click="select">
+            <p class="panel-heading">Client names</p>
+            <p class="panel-block">
+              <input v-for="(value, client) in clients" v-model="value.name">
+            </p>
+          </article>
+          <article class="panel">
+            <p class="panel-heading">Client configs (first ip: {{network}}.{{startip}}, count: {{ clientcount }})</p>
+            <p class="panel-block" >
               <code>
-                <span v-for="(value, client) in clients">
-                ## Begin Client {{ client - 1 }}<br>
+                <span v-on:click="select" v-for="(value, client) in clients">
+                ## {{ value.name }}<br>
                 [Interface]<br>
                 Address = {{ network }}.{{ client }}/24<br>
                 PrivateKey = {{ value.privateKey }}<br>
                 [Peer]<br>
                 PublicKey = {{ serverkeys.publicKey }}<br>
                 AllowedIPs = {{ network }}.1/24<br>
-                Endpoint = {{ server }}:{{ port }}<br>
-                ## End Client {{ client - 1 }}<br><br>
+                Endpoint = {{ server }}:{{ port }}<br><br>
+                </span>
               </code>
             </p>
           </article>
@@ -77,21 +92,29 @@
           server: "somedomain.com",
           port: 51820,
           network: "172.17.172",
+          startip: 2,
           clientcount: 3,
+          clients: {},
           serverkeys: wireguard.generateKeypair()
         };
       },
       methods: {
         select(event) {
-          r = document.createRange(); r.selectNode(event.target.closest("p"));
+          r = document.createRange(); r.selectNode(event.target.closest("span"));
           s = window.getSelection(); s.removeAllRanges(); s.addRange(r);
+        },
+        updateclients(event) {
+          console.log("hi")
+          this.clients = this.makeclients;
         }
       },
       computed: {
-        clients() {
+        makeclients() {
           var c = {};
           for (client in [...Array(Math.floor(this.clientcount)).keys()]) {
-            c[Math.floor(client) + 2] = wireguard.generateKeypair();
+            finaloctet = Math.floor(client) + Math.floor(this.startip);
+            c[finaloctet] = wireguard.generateKeypair();
+            c[finaloctet].name = "Client " + finaloctet;
           }
           return c
         }
