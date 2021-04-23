@@ -15,15 +15,20 @@
       <div class="columns">
         <div class="column">
           <h2 class="title">Wireguard Config Generator</h2>
-          <ul>
-            <li>Server: <input type="text" v-model="server"></li>
-            <li>Port: <input type="number" v-model="port"></li>
-            <li>Clients: <input type="number" v-model="clientcount"></li>
-            <li>Network: <input type="text" v-model="network"></li>
-          </ul>
-          <p class="subtitle">Server config</p>
           <article class="panel">
-            <p class="panel-heading">{{ server }}:{{ port }}</p>
+            <table class="table">
+              <tr>
+                <td>Server: <input type="text" v-model="server"></td>
+                <td>Port: <input type="number" v-model="port"></td>
+              </tr>
+              <tr>
+                <td>Network: <input type="text" v-model="network"></td>
+                <td>Clients: <input type="number" v-model="clientcount"></td>
+              </tr>
+            </table>
+          </article>
+          <article class="panel">
+            <p class="panel-heading">Server config {{ server }}:{{ port }}</p>
             <p class="panel-block" v-on:click="select">
               <code>
                 [Interface]<br>
@@ -41,19 +46,21 @@
           </article>
         </div>
         <div class="column">
-          <p class="subtitle">Client configs</p>
-          <article class="panel" v-for="(value, client) in clients">
-            <p class="panel-heading">Client {{ client - 1 }}</p>
+          <article class="panel">
+            <p class="panel-heading">Client configs ({{ clientcount }} clients)</p>
             <p class="panel-block" v-on:click="select">
               <code>
+                <span v-for="(value, client) in clients">
+                ## Begin Client {{ client - 1 }}<br>
                 [Interface]<br>
                 Address = {{ network }}.{{ client }}/24<br>
                 PrivateKey = {{ value.privateKey }}<br>
                 <br>
                 [Peer]<br>
                 PublicKey = {{ serverkeys.publicKey }}<br>
-                AllowedIPs = 0.0.0.0/0, ::/0<br>
-                Endpoint = {{ server }}:{{ port }}
+                AllowedIPs = {{ network }}.1/24<br>
+                Endpoint = {{ server }}:{{ port }}<br>
+                ## End Client {{ client - 1 }}<br>
               </code>
             </p>
           </article>
@@ -69,7 +76,7 @@
       data() {
         return {
           server: "somedomain.com",
-          port: 5180,
+          port: 51820,
           network: "172.17.172",
           clientcount: 3,
           serverkeys: wireguard.generateKeypair()
