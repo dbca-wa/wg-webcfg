@@ -39,7 +39,7 @@
                 # Client {{ client - 1 }}<br>
                 [Peer]<br>
                 PublicKey = {{ value.publicKey }}<br>
-                AllowedIPs = {{ network }}.{{ client }}/32
+                AllowedIPs = {{ network }}.{{ client }}/32<br>
                 </span>           
                 </code>
             </p>
@@ -55,12 +55,11 @@
                 [Interface]<br>
                 Address = {{ network }}.{{ client }}/24<br>
                 PrivateKey = {{ value.privateKey }}<br>
-                <br>
                 [Peer]<br>
                 PublicKey = {{ serverkeys.publicKey }}<br>
                 AllowedIPs = {{ network }}.1/24<br>
                 Endpoint = {{ server }}:{{ port }}<br>
-                ## End Client {{ client - 1 }}<br>
+                ## End Client {{ client - 1 }}<br><br>
               </code>
             </p>
           </article>
