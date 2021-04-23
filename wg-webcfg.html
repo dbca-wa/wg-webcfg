@@ -15,8 +15,12 @@
       <div class="columns">
         <div class="column">
           <h2 class="title">Wireguard Config Generator</h2>
+          This page intends to generate a config that can be saved to a server, which allows for all client config to be regenerated/updated from the servers config as required. The config is a very basic tunnel, where each client can only access the servers IP, and no routing/masquerading is allowed (ideal for single server remote access).
+          <div class="buttons">
+            <button class="button is-primary" v-on:click="updateclients">Generate</button>
+            <button class="button is-warning">Import Server Config</button>
+          </div>
           <article class="panel">
-            <button class="button" v-on:click="updateclients">Go</button>
             <table class="table">
               <tr>
                 <td>Server: <input type="text" v-model="server"></td>
@@ -35,54 +39,49 @@
           <article class="panel">
             <p class="panel-heading">Server config {{ server }}:{{ port }}</p>
             <p class="panel-block" >
-              <code>
-                <span v-on:click="select">
+              <code style="font-size:small;"><span v-on:click="select"># Server: {{ server }}, Port: {{ port }}<br>
                 [Interface]<br>
                 Address = {{ network }}.1/24<br>
-                # Server: {{ server }}, Port: {{ port }}<br>
                 ListenPort = {{ port }}<br>
                 PrivateKey = {{ serverkeys.privateKey }}<br>
                 # PublicKey = {{ serverkeys.publicKey }}<br>
-                <span v-for="(value, client) in clients"><br>
-                # {{ value.name }}<br>
-                [Peer]<br>
-                PublicKey = {{ value.publicKey }}<br>
-                AllowedIPs = {{ network }}.{{ client }}/32<br>
+                  <span v-for="(value, client) in clients"><br>
+                  ## {{ value.name }}<br>
+                  [Peer]<br>
+                  # PrivateKey = {{ value.privateKey }}<br>
+                  PublicKey = {{ value.publicKey }}<br>
+                  AllowedIPs = {{ network }}.{{ client }}/32<br>
+                  </span>
                 </span>
-                </span>
-                </code>
+              </code>
             </p>
           </article>
         </div>
         <div class="column">
           <article class="panel">
-            <p class="panel-heading">Client names</p>
-            <p class="panel-block">
-              <input v-for="(value, client) in clients" v-model="value.name">
-            </p>
-          </article>
-          <article class="panel">
             <p class="panel-heading">Client configs (first ip: {{network}}.{{startip}}, count: {{ clientcount }})</p>
-            <p class="panel-block" >
-              <code>
-                <span v-on:click="select" v-for="(value, client) in clients">
-                ## {{ value.name }}<br>
+            <div class="panel-block" v-for="(value, client) in clients">
+              <canvas v-bind:id="'canvas'+client"></canvas>
+              <div>
+                <input v-model="value.name">
+                <code class="panel-block" style="font-size:small;" v-bind:id="'code'+client"><span v-on:click="select">## {{ value.name }}<br>
                 [Interface]<br>
                 Address = {{ network }}.{{ client }}/24<br>
                 PrivateKey = {{ value.privateKey }}<br>
                 [Peer]<br>
                 PublicKey = {{ serverkeys.publicKey }}<br>
-                AllowedIPs = {{ network }}.1/24<br>
-                Endpoint = {{ server }}:{{ port }}<br><br>
-                </span>
-              </code>
-            </p>
+                AllowedIPs = {{ network }}.1/32<br>
+                Endpoint = {{ server }}:{{ port }}
+                </span></code>
+              </div>
+              </div>
           </article>
         </div>
       </div>
     </div>
   </section>
   <script src="https://unpkg.com/vue/dist/vue.min.js"></script>
+  <script src="https://unpkg.com/qrcode@1.4.4/build/qrcode.min.js"></script>
   <script src="wireguard.js"></script>
   <script>
     new Vue({
@@ -104,8 +103,13 @@
           s = window.getSelection(); s.removeAllRanges(); s.addRange(r);
         },
         updateclients(event) {
-          console.log("hi")
           this.clients = this.makeclients;
+          var clients = this.clients;
+          setTimeout(function() {
+            for (client in clients) {
+              QRCode.toCanvas(document.getElementById('canvas' + client), document.getElementById('code' + client).innerText)
+            }
+          });
         }
       },
       computed: {
