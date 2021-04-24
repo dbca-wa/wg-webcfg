@@ -44,10 +44,10 @@
                 PrivateKey = {{ serverkeys.privateKey }}<br>
                 # PublicKey = {{ serverkeys.publicKey }}<br>
                 # Server = {{ server }}<br>
-                # Port = {{ port }}<br>
+                <span v-for="line in oldconfig">{{ line }}<br></span>
                   <span v-for="(value, client) in clients"><br>
-                  ## {{ value.name }}<br>
                   [Peer]<br>
+                  ## {{ value.name }}<br>
                   AllowedIPs = {{ network }}.{{ client }}/32<br>
                   PublicKey = {{ value.publicKey }}<br>
                   # PrivateKey = {{ value.privateKey }}<br>
@@ -64,8 +64,8 @@
               <canvas :id="'canvas'+client"></canvas>
               <div>
                 <input v-model="value.name">
-                <code class="panel-block" style="font-size:small;" :id="'code'+client"><span @click="select">## {{ value.name }}<br>
-                [Interface]<br>
+                <code class="panel-block" style="font-size:small;" :id="'code'+client"><span @click="select">[Interface]<br>
+                ## {{ value.name }}<br>
                 Address = {{ network }}.{{ client }}/24<br>
                 PrivateKey = {{ value.privateKey }}<br>
                 [Peer]<br>
@@ -96,7 +96,7 @@
       </div>
     </div>
   </section>
-  <script src="https://unpkg.com/vue/dist/vue.min.js"></script>
+  <script src="https://unpkg.com/vue@2.6.12/dist/vue.js"></script>
   <script src="https://unpkg.com/qrcode@1.4.4/build/qrcode.min.js"></script>
   <script src="wireguard.js"></script>
   <script>
@@ -104,11 +104,12 @@
       el: "#app",
       data() {
         return {
-          server: "somedomain.com",
+          server: "wireguard.fqdn",
           port: 51820,
           network: "172.17.172",
           startip: 2,
-          clientcount: 3,
+          clientcount: 1,
+          oldconfig: [],
           clients: {},
           modalactive: null,
           serverkeys: wireguard.generateKeypair()
@@ -120,9 +121,42 @@
           s = window.getSelection(); s.removeAllRanges(); s.addRange(r);
         },
         importconfig(event) {
-          var config = document.getElementById("textimport").value.split("\n");
-
-          console.log(config);
+          var data = this;
+          var config = document.getElementById("textimport").value.split( /\n/ ) // split lines
+          config.map( line => line.trim() ) // cleanup whitespace
+          var section = null;
+          data.oldconfig = [];
+          config.forEach(line => {
+            if ( line.length ) {
+              if ( line.startsWith("[") ) { 
+                section = line;
+                if (section == "[Peer]") {
+                  data.oldconfig.push("");
+                  data.oldconfig.push(section);
+                } 
+              } else { 
+                var parts = line.split("=");
+                var key = parts.shift().trim();
+                var value = parts.join("=").trim();
+                switch (section + key) {
+                  case '[Interface]Address': data.network = value.split(".").slice(0,3).join("."); break;
+                  case '[Interface]ListenPort': data.port = value; break;
+                  case '[Interface]PrivateKey': data.serverkeys.privateKey = value; break;
+                  case '[Interface]# PublicKey': data.serverkeys.publicKey = value; break;
+                  case '[Interface]# Server': data.server = value; break;
+                  default:
+                    data.oldconfig.push(line)
+                    if (section + key == "[Peer]AllowedIPs") {
+                      var lastip = Math.floor(value.split(".").slice(-1)[0].split("/")[0])
+                      if (lastip + 1 > data.startip) {
+                        data.startip = lastip + 1;
+                      }
+                    }
+                } 
+              }
+            } 
+          })
+          data.modalactive = null;
         },
         updateclients(event) {
           this.clients = this.makeclients;
